@@ -1,11 +1,13 @@
 <script lang="ts">
+	import { base } from '$app/paths';
+	
 	interface Props {
 		src?: string;
 		size?: string;
 		duration?: number;
 	}
 
-	let { src = '/favicon.svg', size = '48px', duration = 8 }: Props = $props();
+	let { src = `${base}/favicon.svg`, size = '48px', duration = 8 }: Props = $props();
 </script>
 
 <div
