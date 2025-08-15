@@ -61,16 +61,6 @@
 </div>`;
 </script>
 
-<svelte:head>
-	<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-	<script>
-		// Enable dark mode based on system preference
-		tailwind.config = {
-			darkMode: 'media'
-		};
-	</script>
-</svelte:head>
-
 <div class="min-h-screen">
 	<div class="max-w-6xl mx-auto p-8 font-mono">
 		<div class="flex items-center gap-8 mb-8">

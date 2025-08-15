@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+
+/* Automatic dark mode based on system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
