@@ -1,6 +1,6 @@
 {
 	"name": "svelte-overflow-fade",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
@@ -64,10 +64,11 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/yourusername/svelte-overflow-fade"
+		"url": "https://github.com/harshmandan/svelte-overflow-fade"
 	},
+	"homepage": "https://harshmandan.github.io/svelte-overflow-fade/",
 	"license": "MIT",
-	"author": "Your Name",
+	"author": "Harsh Mandan",
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"esbuild"
