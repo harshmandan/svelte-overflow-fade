@@ -1,58 +1,144 @@
-# Svelte library
+<div align="center">
+  <br />
+  <img src="./static/logo.png" alt="Svelte Overflow Fade" width="100" height="100" />
+  <h1>svelte-overflow-fade</h1>
+  <p>
+    <strong>A Svelte action and attachment for adding beautiful fade effects to overflowing content</strong>
+  </p>
+</div>
 
-Everything you need to build a Svelte library, powered by [`sv`](https://npmjs.com/package/sv).
+<br />
 
-Read more about creating a library [in the docs](https://svelte.dev/docs/kit/packaging).
+<div align="center">
+  <img src="./static/preview.png" alt="Svelte Overflow Fade Preview" width="100%" style="width: 600px;" />
+</div>
 
-## Creating a project
+## 🖼️ Demo
 
-If you're seeing this, you've probably already done this step. Congrats!
+[Live Demo →](https://harshmandan.github.io/svelte-overflow-fade/)
 
-```sh
-# create a new project in the current directory
-npx sv create
+## ✨ Features
 
-# create a new project in my-app
-npx sv create my-app
+- 🎨 **Two fade modes**: CSS mask-based or DOM element-based
+- 🔄 **Dual API support**: Actions for all Svelte versions, Attachments for Svelte 5.29+
+- 📏 **Directional scrolling**: Supports both horizontal and vertical overflow
+- 🎯 **Smart detection**: Automatically shows/hides fades based on scroll position
+- ⚡ **Performant**: Throttled scroll events and optimized animations
+- 🌗 **Dark mode ready**: Works seamlessly with any color scheme
+- 📦 **Zero dependencies**: Lightweight and self-contained
+
+## 📦 Installation
+
+```bash
+npm install svelte-overflow-fade
 ```
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+```bash
+pnpm add svelte-overflow-fade
 ```
 
-Everything inside `src/lib` is part of your library, everything inside `src/routes` can be used as a showcase or preview app.
-
-## Building
-
-To build your library:
-
-```sh
-npm pack
+```bash
+yarn add svelte-overflow-fade
 ```
 
-To create a production version of your showcase app:
+## 🚀 Quick Start
 
-```sh
-npm run build
+### Using the Action API (All Svelte versions)
+
+```svelte
+<script>
+	import { overflowFadeAction } from 'svelte-overflow-fade';
+</script>
+
+<div
+	class="overflow-auto max-h-64"
+	use:overflowFadeAction={{
+		axis: 'y',
+		fade: { type: 'mask', fadePercent: 10 }
+	}}
+>
+	<!-- Your scrollable content -->
+</div>
 ```
 
-You can preview the production build with `npm run preview`.
+### Using the Attachment API (Svelte 5.29+)
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+```svelte
+<script>
+	import { overflowFade } from 'svelte-overflow-fade';
+</script>
 
-## Publishing
-
-Go into the `package.json` and give your package the desired name through the `"name"` option. Also consider adding a `"license"` field and point it to a `LICENSE` file which you can create from a template (one popular option is the [MIT license](https://opensource.org/license/mit/)).
-
-To publish your library to [npm](https://www.npmjs.com):
-
-```sh
-npm publish
+<div
+	class="overflow-auto max-h-64"
+	{@attach overflowFade({
+		axis: 'y',
+		fade: { type: 'mask', fadePercent: 10 }
+	})}
+>
+	<!-- Your scrollable content -->
+</div>
 ```
+
+## ⚙️ Configuration Options
+
+| Option                 | Type                  | Description                                   |
+| ---------------------- | --------------------- | --------------------------------------------- |
+| `axis`                 | `'x' \| 'y'`          | Direction of scroll (horizontal or vertical)  |
+| `fade.type`            | `'mask' \| 'element'` | Fade implementation method                    |
+| `fade.fadePercent`     | `number`              | Size of fade as percentage (mask mode only)   |
+| `fade.size`            | `string`              | Size of fade in CSS units (element mode only) |
+| `fade.backgroundColor` | `string`              | Fade color (element mode only)                |
+| `fade.zIndex`          | `number`              | Z-index for fade elements (element mode only) |
+
+## 🎨 Fade Modes
+
+### CSS Mask Mode (Recommended)
+
+- Uses CSS `mask-image` for smooth, native fading
+- Perfect for gradient backgrounds
+- Better performance
+- Preserves background effects
+
+```javascript
+fade: {
+  type: 'mask',
+  fadePercent: 10
+}
+```
+
+### Element Mode
+
+- Creates DOM elements with gradient backgrounds
+- Compatible with older browsers
+- Customizable fade color
+- Good for solid backgrounds
+
+```javascript
+fade: {
+  type: 'element',
+  size: '60px',
+  backgroundColor: 'white',
+  zIndex: 10
+}
+```
+
+## 🔄 Events
+
+The action dispatches an `overflow` event with the current overflow state:
+
+```svelte
+<script>
+	function handleOverflow(event) {
+		const { overflowTop, overflowBottom, overflowLeft, overflowRight } = event.detail;
+		// React to overflow changes
+	}
+</script>
+
+<div use:overflowFadeAction={{ axis: 'y' }} on:overflow={handleOverflow}>
+	<!-- Content -->
+</div>
+```
+
+## 📄 License
+
+MIT © Harsh Mandan
