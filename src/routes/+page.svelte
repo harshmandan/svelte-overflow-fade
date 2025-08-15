@@ -65,7 +65,7 @@
 	<div class="max-w-6xl mx-auto p-8 font-mono">
 		<div class="flex items-center gap-8 mb-8">
 			<Logo />
-			<h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Svelte Overflow Fade Demo</h1>
+			<h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">svelte-overflow-fade</h1>
 		</div>
 
 		<section
