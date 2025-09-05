@@ -12,6 +12,11 @@ export type OverflowFadeOptions = {
 	fade?: FadeConfig;
 };
 
+export type OverflowCheckOptions = {
+	axis: 'x' | 'y';
+	onOverflow?: (state: OverflowState) => void;
+};
+
 export type FadeConfig =
 	| {
 			type: 'element';
@@ -26,6 +31,8 @@ export type FadeConfig =
 
 export type OverflowFadeAction = typeof overflowFadeAction;
 export type OverflowFadeAttachment = typeof overflowFade;
+export type IsOverflowingAction = typeof isOverflowingAction;
+export type IsOverflowingAttachment = typeof isOverflowing;
 
 function ensureMaskStyles() {
 	let styleElement = document.querySelector('style[data-overflow-fade-styles]') as HTMLStyleElement;
@@ -74,6 +81,88 @@ function checkOverflow(element: HTMLElement, axis: 'x' | 'y'): OverflowState {
 	return state;
 }
 
+function throttle<T extends unknown[]>(delay: number, func: (...args: T) => void) {
+	let timeoutId: ReturnType<typeof setTimeout> | null = null;
+	let lastExecTime = 0;
+
+	return function (...args: T) {
+		const currentTime = Date.now();
+
+		if (currentTime - lastExecTime > delay) {
+			func(...args);
+			lastExecTime = currentTime;
+		} else {
+			if (timeoutId) clearTimeout(timeoutId);
+			timeoutId = setTimeout(
+				() => {
+					func(...args);
+					lastExecTime = Date.now();
+				},
+				delay - (currentTime - lastExecTime)
+			);
+		}
+	};
+}
+
+// Core overflow checking functionality
+function createOverflowChecker(element: HTMLElement, options: OverflowCheckOptions) {
+	let { axis, onOverflow } = options;
+	let observer: MutationObserver | null = null;
+
+	function handleOverflowCheck() {
+		const state = checkOverflow(element, axis);
+		
+		// Call the callback if provided
+		onOverflow?.(state);
+		
+		// Always dispatch the event
+		element.dispatchEvent(new CustomEvent<OverflowState>('overflow', { detail: state }));
+	}
+
+	const throttledCheck = throttle(100, handleOverflowCheck);
+
+	function init() {
+		observer = new MutationObserver(throttledCheck);
+		observer.observe(element, { childList: true, subtree: true });
+		element.addEventListener('scroll', throttledCheck);
+
+		tick().then(throttledCheck);
+	}
+
+	function destroy() {
+		observer?.disconnect();
+		element.removeEventListener('scroll', throttledCheck);
+	}
+
+	function update(newOptions: OverflowCheckOptions) {
+		axis = newOptions.axis;
+		onOverflow = newOptions.onOverflow;
+		throttledCheck();
+	}
+
+	// Initialize
+	init();
+
+	return {
+		destroy,
+		update
+	};
+}
+
+// Export overflow checking as action
+export function isOverflowingAction(element: HTMLElement, options: OverflowCheckOptions) {
+	return createOverflowChecker(element, options);
+}
+
+// Export overflow checking as attachment for Svelte 5.29+
+export function isOverflowing(options: OverflowCheckOptions) {
+	return (element: HTMLElement) => {
+		const { destroy } = createOverflowChecker(element, options);
+		return destroy;
+	};
+}
+
+// Overflow fade implementation
 function createOverflowFade(element: HTMLElement, options: OverflowFadeOptions) {
 	let { axis, fade = { type: 'mask', fadePercent: 10 } } = options;
 	let isVertical = axis === 'y';
@@ -81,7 +170,7 @@ function createOverflowFade(element: HTMLElement, options: OverflowFadeOptions) 
 	let startFader: HTMLDivElement | null = null;
 	let endFader: HTMLDivElement | null = null;
 	let originalStyle: string | null = null;
-	let observer: MutationObserver | null = null;
+	let overflowChecker: ReturnType<typeof createOverflowChecker> | null = null;
 
 	function createElementFaders(config: Extract<FadeConfig, { type: 'element' }>) {
 		const baseStyles = `
@@ -160,15 +249,8 @@ function createOverflowFade(element: HTMLElement, options: OverflowFadeOptions) 
 		}
 	}
 
-	function handleOverflowCheck() {
-		const state = checkOverflow(element, axis);
-		updateFaders(state);
-		element.dispatchEvent(new CustomEvent<OverflowState>('overflow', { detail: state }));
-	}
-
-	const throttledCheck = throttle(100, handleOverflowCheck);
-
 	function init() {
+		// Set up visual elements
 		if (fade.type === 'element') {
 			createElementFaders(fade);
 		} else {
@@ -176,32 +258,47 @@ function createOverflowFade(element: HTMLElement, options: OverflowFadeOptions) 
 			setupMaskCSS();
 		}
 
-		observer = new MutationObserver(throttledCheck);
-		observer.observe(element, { childList: true, subtree: true });
-		element.addEventListener('scroll', throttledCheck);
-
-		tick().then(throttledCheck);
+		// Set up overflow checking with callback to update faders
+		overflowChecker = createOverflowChecker(element, {
+			axis,
+			onOverflow: updateFaders
+		});
 	}
 
 	function destroy() {
+		// Clean up overflow checker
+		overflowChecker?.destroy();
+		
+		// Clean up visual elements
 		if (fade.type === 'element') {
 			startFader?.remove();
 			endFader?.remove();
 		} else if (originalStyle !== null) {
 			element.style.cssText = originalStyle;
 		}
-
-		observer?.disconnect();
-		element.removeEventListener('scroll', throttledCheck);
 	}
 
 	function update(newOptions: OverflowFadeOptions) {
-		destroy();
-		options = newOptions;
-		axis = newOptions.axis;
-		fade = newOptions.fade || { type: 'mask', fadePercent: 10 };
-		isVertical = axis === 'y';
-		init();
+		// Update overflow checker
+		overflowChecker?.update({
+			axis: newOptions.axis,
+			onOverflow: updateFaders
+		});
+		
+		// If fade type changed, rebuild everything
+		if (fade.type !== newOptions.fade?.type) {
+			destroy();
+			options = newOptions;
+			axis = newOptions.axis;
+			fade = newOptions.fade || { type: 'mask', fadePercent: 10 };
+			isVertical = axis === 'y';
+			init();
+		} else {
+			// Just update the parameters
+			axis = newOptions.axis;
+			fade = newOptions.fade || { type: 'mask', fadePercent: 10 };
+			isVertical = axis === 'y';
+		}
 	}
 
 	// Initialize
@@ -219,34 +316,11 @@ export function overflowFadeAction(element: HTMLElement, options: OverflowFadeOp
 
 /**
  * Attachment version of overflowFade for Svelte 5.29+
- * Use with {@attach overflowFadeAttachment(options)}
+ * Use with {@attach overflowFade(options)}
  */
 export function overflowFade(options: OverflowFadeOptions) {
 	return (element: HTMLElement) => {
 		const { destroy } = createOverflowFade(element, options);
 		return destroy;
-	};
-}
-
-function throttle<T extends unknown[]>(delay: number, func: (...args: T) => void) {
-	let timeoutId: ReturnType<typeof setTimeout> | null = null;
-	let lastExecTime = 0;
-
-	return function (...args: T) {
-		const currentTime = Date.now();
-
-		if (currentTime - lastExecTime > delay) {
-			func(...args);
-			lastExecTime = currentTime;
-		} else {
-			if (timeoutId) clearTimeout(timeoutId);
-			timeoutId = setTimeout(
-				() => {
-					func(...args);
-					lastExecTime = Date.now();
-				},
-				delay - (currentTime - lastExecTime)
-			);
-		}
 	};
 }
