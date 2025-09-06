@@ -1,3 +1,6 @@
+/// <reference types="svelte" />
+import type { OverflowState } from '$lib';
+
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
@@ -7,6 +10,12 @@ declare global {
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}
+	}
+
+	namespace svelteHTML {
+		interface HTMLAttributes<T> {
+			'onoverflow'?: (e: CustomEvent<OverflowState>) => void;
+		}
 	}
 }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { overflowFade, isOverflowingAction } from '$lib';
+	import { overflowFade, isOverflowingAction, isOverflowing } from '$lib';
 	import Logo from './Logo.svelte';
 	import type { ChangeEventHandler } from 'svelte/elements';
 	import { fade } from 'svelte/transition';
@@ -211,9 +211,9 @@
 				<div
 					bind:this={scrollContainer}
 					class="rounded p-4 overflow-x-auto border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900"
-					use:isOverflowingAction={{
+					{@attach isOverflowing({
 						axis: 'x'
-					}}
+					})}
 					onoverflow={({ detail }) => {
 						showLeftScrollBtn = detail.overflowLeft;
 						showRightScrollBtn = detail.overflowRight;
@@ -338,6 +338,35 @@
 						>: string - Fade color (element mode)
 					</div>
 				</div>
+			</div>
+
+			<div class="mt-6 p-4 bg-blue-50 dark:bg-yellow-900/20 rounded-lg">
+				<h4 class="font-semibold text-sm mb-2 text-blue-700 dark:text-yellow-300">
+					TypeScript: Custom Event Types
+				</h4>
+				<p class="text-sm text-gray-700 dark:text-gray-300 mb-3">
+					To avoid TypeScript errors with the <span class="font-mono bg-blue-200 dark:bg-gray-700 px-1 rounded">onoverflow</span> event, add this to your <span class="font-mono bg-blue-200 dark:bg-gray-700 px-1 rounded">app.d.ts</span> or a separate <span class="font-mono bg-blue-200 dark:bg-gray-700 px-1 rounded">.d.ts</span> file:
+				</p>
+				<div class="bg-gray-100 dark:bg-gray-900 p-3 rounded overflow-x-auto border border-black/10 dark:border-gray-600">
+					<pre class="text-xs dark:text-white"><code>{`/// <reference types="svelte" />
+import type { OverflowState } from 'svelte-overflow-fade';
+
+declare global {
+  namespace svelteHTML {
+    interface HTMLAttributes<T> {
+      // Svelte 5 syntax
+      'onoverflow'?: (e: CustomEvent<OverflowState>) => void;
+      // Svelte 4 syntax (if needed)
+      'on:overflow'?: (e: CustomEvent<OverflowState>) => void;
+    }
+  }
+}
+
+export {};`}</code></pre>
+				</div>
+				<p class="text-xs text-gray-600 dark:text-gray-400 mt-2">
+					Note: The <span class="font-mono bg-blue-200 dark:bg-gray-700 px-1 rounded">declare global</span> wrapper is essential for the types to work correctly.
+				</p>
 			</div>
 		</section>
 	</div>
