@@ -2,9 +2,10 @@
   <br />
   <img src="./static/logo.png" alt="Svelte Overflow Fade" width="100" height="100" />
   <h1>svelte-overflow-fade</h1>
-  <a href="https://www.npmjs.com/package/svelte-overflow-fade" target="_blank">
-    <img src="https://img.shields.io/npm/v/svelte-overflow-fade"/>
-  </a>
+
+  [![version](http://img.shields.io/npm/v/svelte-overflow-fade.svg)](https://www.npmjs.com/package/svelte-overflow-fade)
+  [![downloads](http://img.shields.io/npm/dm/svelte-overflow-fade.svg)](https://www.npmjs.com/package/svelte-overflow-fade)
+ 
   <p>
     <strong>A Svelte action and attachment for adding beautiful fade effects to overflowing content</strong>
   </p>
