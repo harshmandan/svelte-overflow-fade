@@ -7,13 +7,23 @@ export type OverflowState = {
 	overflowBottom: boolean;
 };
 
+/**
+ * Which edge(s) to fade/check, relative to the axis.
+ * - `'both'` (default): start and end
+ * - `'start'`: top for axis `'y'`, left for axis `'x'`
+ * - `'end'`: bottom for axis `'y'`, right for axis `'x'`
+ */
+export type FadeSides = 'both' | 'start' | 'end';
+
 export type OverflowFadeOptions = {
 	axis: 'x' | 'y';
+	sides?: FadeSides;
 	fade?: FadeConfig;
 };
 
 export type OverflowCheckOptions = {
 	axis: 'x' | 'y';
+	sides?: FadeSides;
 	onOverflow?: (state: OverflowState) => void;
 };
 
@@ -60,7 +70,11 @@ function ensureMaskStyles() {
 	}
 }
 
-function checkOverflow(element: HTMLElement, axis: 'x' | 'y'): OverflowState {
+function checkOverflow(
+	element: HTMLElement,
+	axis: 'x' | 'y',
+	sides: FadeSides = 'both'
+): OverflowState {
 	const state: OverflowState = {
 		overflowLeft: false,
 		overflowRight: false,
@@ -68,14 +82,20 @@ function checkOverflow(element: HTMLElement, axis: 'x' | 'y'): OverflowState {
 		overflowBottom: false
 	};
 
+	// Only measure the edge(s) we actually care about.
+	const checkStart = sides !== 'end';
+	const checkEnd = sides !== 'start';
+
 	if (axis === 'y') {
-		state.overflowTop = Math.floor(element.scrollTop) > 0;
-		state.overflowBottom =
-			Math.round(element.clientHeight + element.scrollTop) < element.scrollHeight;
+		if (checkStart) state.overflowTop = Math.floor(element.scrollTop) > 0;
+		if (checkEnd)
+			state.overflowBottom =
+				Math.round(element.clientHeight + element.scrollTop) < element.scrollHeight;
 	} else {
-		state.overflowLeft = Math.floor(element.scrollLeft) > 0;
-		state.overflowRight =
-			Math.round(element.clientWidth + element.scrollLeft) < element.scrollWidth;
+		if (checkStart) state.overflowLeft = Math.floor(element.scrollLeft) > 0;
+		if (checkEnd)
+			state.overflowRight =
+				Math.round(element.clientWidth + element.scrollLeft) < element.scrollWidth;
 	}
 
 	return state;
@@ -106,11 +126,11 @@ function throttle<T extends unknown[]>(delay: number, func: (...args: T) => void
 
 // Core overflow checking functionality
 function createOverflowChecker(element: HTMLElement, options: OverflowCheckOptions) {
-	let { axis, onOverflow } = options;
+	let { axis, sides = 'both', onOverflow } = options;
 	let observer: MutationObserver | null = null;
 
 	function handleOverflowCheck() {
-		const state = checkOverflow(element, axis);
+		const state = checkOverflow(element, axis, sides);
 		
 		// Call the callback if provided
 		onOverflow?.(state);
@@ -136,6 +156,7 @@ function createOverflowChecker(element: HTMLElement, options: OverflowCheckOptio
 
 	function update(newOptions: OverflowCheckOptions) {
 		axis = newOptions.axis;
+		sides = newOptions.sides ?? 'both';
 		onOverflow = newOptions.onOverflow;
 		throttledCheck();
 	}
@@ -164,7 +185,7 @@ export function isOverflowing(options: OverflowCheckOptions) {
 
 // Overflow fade implementation
 function createOverflowFade(element: HTMLElement, options: OverflowFadeOptions) {
-	let { axis, fade = { type: 'mask', fadePercent: 10 } } = options;
+	let { axis, sides = 'both', fade = { type: 'mask', fadePercent: 10 } } = options;
 	let isVertical = axis === 'y';
 
 	let startFader: HTMLDivElement | null = null;
@@ -181,32 +202,35 @@ function createOverflowFade(element: HTMLElement, options: OverflowFadeOptions) 
 			${isVertical ? 'height: 0; left: 0; right: 0;' : 'width: 0; top: 0; bottom: 0;'}
 		`;
 
-		startFader = document.createElement('div');
-		endFader = document.createElement('div');
-
 		const gradientDir = isVertical ? 'bottom' : 'right';
 		const oppositeDir = isVertical ? 'top' : 'left';
 
-		startFader.style.cssText = `
-			${baseStyles}
-			${isVertical ? 'top: 0;' : 'left: 0;'}
-			background: linear-gradient(to ${gradientDir},
-				${config.backgroundColor} 0%,
-				${config.backgroundColor} 10%,
-				transparent 100%);
-		`;
+		// Only create the fader(s) for the requested side(s).
+		if (sides !== 'end') {
+			startFader = document.createElement('div');
+			startFader.style.cssText = `
+				${baseStyles}
+				${isVertical ? 'top: 0;' : 'left: 0;'}
+				background: linear-gradient(to ${gradientDir},
+					${config.backgroundColor} 0%,
+					${config.backgroundColor} 10%,
+					transparent 100%);
+			`;
+			element.parentElement?.appendChild(startFader);
+		}
 
-		endFader.style.cssText = `
-			${baseStyles}
-			${isVertical ? 'bottom: 0;' : 'right: 0;'}
-			background: linear-gradient(to ${oppositeDir},
-				${config.backgroundColor} 0%,
-				${config.backgroundColor} 10%,
-				transparent 100%);
-		`;
-
-		element.parentElement?.appendChild(startFader);
-		element.parentElement?.appendChild(endFader);
+		if (sides !== 'start') {
+			endFader = document.createElement('div');
+			endFader.style.cssText = `
+				${baseStyles}
+				${isVertical ? 'bottom: 0;' : 'right: 0;'}
+				background: linear-gradient(to ${oppositeDir},
+					${config.backgroundColor} 0%,
+					${config.backgroundColor} 10%,
+					transparent 100%);
+			`;
+			element.parentElement?.appendChild(endFader);
+		}
 	}
 
 	function setupMaskCSS() {
@@ -229,23 +253,28 @@ function createOverflowFade(element: HTMLElement, options: OverflowFadeOptions) 
 	}
 
 	function updateFaders(state: OverflowState) {
-		if (fade.type === 'element' && startFader && endFader) {
+		if (fade.type === 'element') {
 			const size = fade.size;
 			if (isVertical) {
-				startFader.style.height = state.overflowTop ? size : '0';
-				endFader.style.height = state.overflowBottom ? size : '0';
+				if (startFader) startFader.style.height = state.overflowTop ? size : '0';
+				if (endFader) endFader.style.height = state.overflowBottom ? size : '0';
 			} else {
-				startFader.style.width = state.overflowLeft ? size : '0';
-				endFader.style.width = state.overflowRight ? size : '0';
+				if (startFader) startFader.style.width = state.overflowLeft ? size : '0';
+				if (endFader) endFader.style.width = state.overflowRight ? size : '0';
 			}
 		} else if (fade.type === 'mask') {
 			const percent = fade.fadePercent;
-			const hasStartOverflow = isVertical ? state.overflowTop : state.overflowLeft;
-			const hasEndOverflow = isVertical ? state.overflowBottom : state.overflowRight;
 
-			// Update CSS custom properties for smooth transitions
-			element.style.setProperty('--fade-start', hasStartOverflow ? `${percent}` : '0');
-			element.style.setProperty('--fade-end', hasEndOverflow ? `${100 - percent}` : '100');
+			// Update CSS custom properties for smooth transitions.
+			// Untouched sides stay at their no-fade defaults (0 / 100).
+			if (sides !== 'end') {
+				const hasStartOverflow = isVertical ? state.overflowTop : state.overflowLeft;
+				element.style.setProperty('--fade-start', hasStartOverflow ? `${percent}` : '0');
+			}
+			if (sides !== 'start') {
+				const hasEndOverflow = isVertical ? state.overflowBottom : state.overflowRight;
+				element.style.setProperty('--fade-end', hasEndOverflow ? `${100 - percent}` : '100');
+			}
 		}
 	}
 
@@ -261,6 +290,7 @@ function createOverflowFade(element: HTMLElement, options: OverflowFadeOptions) 
 		// Set up overflow checking with callback to update faders
 		overflowChecker = createOverflowChecker(element, {
 			axis,
+			sides,
 			onOverflow: updateFaders
 		});
 	}
@@ -279,25 +309,23 @@ function createOverflowFade(element: HTMLElement, options: OverflowFadeOptions) 
 	}
 
 	function update(newOptions: OverflowFadeOptions) {
-		// Update overflow checker
-		overflowChecker?.update({
-			axis: newOptions.axis,
-			onOverflow: updateFaders
-		});
-		
-		// If fade type changed, rebuild everything
-		if (fade.type !== newOptions.fade?.type) {
+		const newSides = newOptions.sides ?? 'both';
+
+		// A change to fade type or sides changes which faders exist, so rebuild.
+		if (fade.type !== newOptions.fade?.type || sides !== newSides) {
 			destroy();
 			options = newOptions;
 			axis = newOptions.axis;
+			sides = newSides;
 			fade = newOptions.fade || { type: 'mask', fadePercent: 10 };
 			isVertical = axis === 'y';
 			init();
 		} else {
-			// Just update the parameters
+			// Just update the parameters in place.
 			axis = newOptions.axis;
 			fade = newOptions.fade || { type: 'mask', fadePercent: 10 };
 			isVertical = axis === 'y';
+			overflowChecker?.update({ axis, sides, onOverflow: updateFaders });
 		}
 	}
 

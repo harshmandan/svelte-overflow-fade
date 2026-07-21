@@ -7,10 +7,12 @@
 	type AXIS = 'x' | 'y';
 	type CONTROL = 'mask' | 'element';
 	type BACKGROUND = 'solid' | 'gradient';
+	type SIDES = 'both' | 'start' | 'end';
 
 	let axis: AXIS = $state('y');
 	let fadeType: CONTROL = $state('mask');
 	let background: BACKGROUND = $state('solid');
+	let sides: SIDES = $state('both');
 
 	let showLeftScrollBtn = $state(false);
 	let showRightScrollBtn = $state(false);
@@ -29,6 +31,12 @@
 	const BACKGROUND_OPTIONS = [
 		{ value: 'solid', label: 'Solid' },
 		{ value: 'gradient', label: 'Gradient' }
+	];
+
+	const SIDES_OPTIONS = [
+		{ value: 'both', label: 'Both' },
+		{ value: 'start', label: 'Start (top/left)' },
+		{ value: 'end', label: 'End (bottom/right)' }
 	];
 
 	const actionExampleCode = `<${'script'}>
@@ -156,6 +164,12 @@
 					background,
 					(e) => (background = e.currentTarget.value as BACKGROUND)
 				)}
+				{@render Select(
+					'Sides',
+					SIDES_OPTIONS,
+					sides,
+					(e) => (sides = e.currentTarget.value as SIDES)
+				)}
 			</div>
 
 			<div
@@ -171,6 +185,7 @@
 					class:flex-col={axis === 'y'}
 					{@attach overflowFade({
 						axis: axis,
+						sides: sides,
 						fade:
 							fadeType === 'mask'
 								? { type: 'mask', fadePercent: 10 }
@@ -318,6 +333,10 @@
 					<div>
 						<span class="font-mono bg-orange-200 dark:bg-gray-700 px-1 rounded">axis</span>: 'x' |
 						'y' - Scroll direction
+					</div>
+					<div>
+						<span class="font-mono bg-orange-200 dark:bg-gray-700 px-1 rounded">sides</span>: 'both'
+						| 'start' | 'end' - Which edge to fade (default 'both')
 					</div>
 					<div>
 						<span class="font-mono bg-orange-200 dark:bg-gray-700 px-1 rounded">fade.type</span>:

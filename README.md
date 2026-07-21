@@ -88,6 +88,7 @@ yarn add svelte-overflow-fade
 | Option                 | Type                  | Description                                   |
 | ---------------------- | --------------------- | --------------------------------------------- |
 | `axis`                 | `'x' \| 'y'`          | Direction of scroll (horizontal or vertical)  |
+| `sides`                | `'both' \| 'start' \| 'end'` | Which edge to fade (default `'both'`). `'start'` = top/left, `'end'` = bottom/right, relative to `axis` |
 | `fade.type`            | `'mask' \| 'element'` | Fade implementation method                    |
 | `fade.fadePercent`     | `number`              | Size of fade as percentage (mask mode only)   |
 | `fade.size`            | `string`              | Size of fade in CSS units (element mode only) |
