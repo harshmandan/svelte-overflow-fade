@@ -4,7 +4,7 @@
 	import type { ChangeEventHandler } from 'svelte/elements';
 	import { fade } from 'svelte/transition';
 
-	type AXIS = 'x' | 'y';
+	type AXIS = 'x' | 'y' | 'both';
 	type CONTROL = 'mask' | 'element';
 	type BACKGROUND = 'solid' | 'gradient';
 	type SIDES = 'both' | 'start' | 'end';
@@ -20,8 +20,17 @@
 
 	const AXIS_OPTIONS = [
 		{ value: 'x', label: 'Horizontal' },
-		{ value: 'y', label: 'Vertical' }
+		{ value: 'y', label: 'Vertical' },
+		{ value: 'both', label: 'Both' }
 	];
+
+	// Layout for the demo scroll container so it overflows on the relevant axis/axes.
+	const AXIS_LAYOUT: Record<AXIS, string> = {
+		x: 'flex',
+		y: 'flex flex-col',
+		both: 'grid grid-cols-[repeat(10,150px)]'
+	};
+	let containerLayout = $derived(AXIS_LAYOUT[axis]);
 
 	const CONTROL_OPTIONS = [
 		{ value: 'mask', label: 'CSS Mask' },
@@ -181,8 +190,7 @@
 				]}
 			>
 				<div
-					class="rounded p-4 overflow-auto max-h-72 flex gap-4"
-					class:flex-col={axis === 'y'}
+					class={['rounded p-4 overflow-auto max-h-72 gap-4', containerLayout]}
 					{@attach overflowFade({
 						axis: axis,
 						sides: sides,
@@ -198,7 +206,7 @@
 									}
 					})}
 				>
-					{#each Array(50) as _, i}
+					{#each Array(axis === 'both' ? 100 : 50) as _, i}
 						<div
 							class="{background === 'gradient'
 								? 'bg-white/80 backdrop-blur-sm text-gray-900'
@@ -332,7 +340,7 @@
 				<div class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
 					<div>
 						<span class="font-mono bg-orange-200 dark:bg-gray-700 px-1 rounded">axis</span>: 'x' |
-						'y' - Scroll direction
+						'y' | 'both' - Scroll direction ('both' fades all four edges)
 					</div>
 					<div>
 						<span class="font-mono bg-orange-200 dark:bg-gray-700 px-1 rounded">sides</span>: 'both'
