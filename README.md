@@ -88,7 +88,8 @@ yarn add svelte-overflow-fade
 Set `axis: 'both'` to fade every edge at once — useful for content that scrolls in
 both directions (large tables, canvases, image grids). The two axis masks are
 composited together so corners fade correctly rather than one axis overwriting the
-other. In this mode `sides` is ignored.
+other. `sides` still applies here: `'start'` fades top + left, `'end'` fades bottom +
+right, `'both'` (default) fades all four edges.
 
 ```svelte
 <div
@@ -107,7 +108,7 @@ other. In this mode `sides` is ignored.
 | Option                 | Type                  | Description                                   |
 | ---------------------- | --------------------- | --------------------------------------------- |
 | `axis`                 | `'x' \| 'y' \| 'both'` | Direction of scroll. `'both'` fades all four edges at once  |
-| `sides`                | `'both' \| 'start' \| 'end'` | Which edge to fade (default `'both'`). `'start'` = top/left, `'end'` = bottom/right, relative to `axis`. Ignored when `axis` is `'both'` |
+| `sides`                | `'both' \| 'start' \| 'end'` | Which edge to fade (default `'both'`). `'start'` = top/left, `'end'` = bottom/right, relative to `axis` (with `axis: 'both'`, `'start'` = top + left, `'end'` = bottom + right) |
 | `fade.type`            | `'mask' \| 'element'` | Fade implementation method                    |
 | `fade.fadePercent`     | `number`              | Size of fade as percentage (mask mode only)   |
 | `fade.size`            | `string`              | Size of fade in CSS units (element mode only) |

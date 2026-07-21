@@ -11,17 +11,17 @@ export type OverflowState = {
  * Which axis (or axes) to fade.
  * - `'y'`: vertical scrolling (top/bottom edges)
  * - `'x'`: horizontal scrolling (left/right edges)
- * - `'both'`: fade all four edges at once. `sides` is ignored in this mode.
+ * - `'both'`: fade both axes at once (up to all four edges, subject to `sides`).
  */
 export type FadeAxis = 'x' | 'y' | 'both';
 
 /**
  * Which edge(s) to fade/check, relative to the axis.
  * - `'both'` (default): start and end
- * - `'start'`: top for axis `'y'`, left for axis `'x'`
- * - `'end'`: bottom for axis `'y'`, right for axis `'x'`
- *
- * Ignored when `axis` is `'both'` (all four edges are always faded).
+ * - `'start'`: the beginning edge(s) — top (axis `'y'`), left (axis `'x'`),
+ *   or top + left (axis `'both'`)
+ * - `'end'`: the trailing edge(s) — bottom (axis `'y'`), right (axis `'x'`),
+ *   or bottom + right (axis `'both'`)
  */
 export type FadeSides = 'both' | 'start' | 'end';
 
@@ -63,18 +63,18 @@ type EdgeFlags = Record<Edge, boolean>;
  * and element fader creation.
  */
 function activeEdges(axis: FadeAxis, sides: FadeSides = 'both'): EdgeFlags {
-	if (axis === 'both') {
-		return { top: true, bottom: true, left: true, right: true };
-	}
-
+	// `sides` selects the beginning vs trailing edge of each active axis:
+	// 'start' = top/left, 'end' = bottom/right. This applies to 'both' too.
+	const wantY = axis === 'y' || axis === 'both';
+	const wantX = axis === 'x' || axis === 'both';
 	const checkStart = sides !== 'end';
 	const checkEnd = sides !== 'start';
 
 	return {
-		top: axis === 'y' && checkStart,
-		bottom: axis === 'y' && checkEnd,
-		left: axis === 'x' && checkStart,
-		right: axis === 'x' && checkEnd
+		top: wantY && checkStart,
+		bottom: wantY && checkEnd,
+		left: wantX && checkStart,
+		right: wantX && checkEnd
 	};
 }
 
